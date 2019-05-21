@@ -18,12 +18,36 @@
     <ClCompile Include="win32_fork.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="signal.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="fork.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ntb1.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ntb2.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="stdio.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ntdll.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="ntstatus.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ntport.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="signal.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="forkdata.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
