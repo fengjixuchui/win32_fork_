@@ -654,7 +654,3 @@ BOOL CreateWow64Events(DWORD pid, HANDLE *hParent, HANDLE *hChild,
 	return TRUE;
 }
 
-//这个函数需要把vs的堆栈检测函数给关掉
-void jmp_by_child() {
-
-}
