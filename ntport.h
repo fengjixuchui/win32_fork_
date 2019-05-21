@@ -169,7 +169,7 @@ pretty */
 #define dup(f)                nt_dup((f))
 #define sleep(a)              Sleep((a)*1000)
 
-#define getcwd(a,b)           forward_slash_get_cwd((a),(b))
+#define getcwd_x(a,b)           forward_slash_get_cwd((a),(b))
 
 
 #define L_SET                 SEEK_SET

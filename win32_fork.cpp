@@ -32,6 +32,42 @@
 #include "forkdata.h"
 #include "signal.h"
 
+BOOL dbg_Log(char* DataBuffer)
+
+{
+
+	char* pathx = NULL;
+	pathx = getcwd(NULL, 0);
+	//::GetTempPathA(MAX_PATH, (LPSTR)strTempPath.c_str());
+    std::string strTempPath = pathx;
+	std::string strLogFile = strTempPath + "Log.txt";
+	HANDLE hFile = INVALID_HANDLE_VALUE;
+	DWORD dwBytesWritten = 0;
+	BOOL bErrorFlag = FALSE;
+	OVERLAPPED strOverlapped = {};
+	strOverlapped.Offset = 0xFFFFFFFF;
+	strOverlapped.OffsetHigh = 0xFFFFFFFF;
+	hFile = CreateFileA(strLogFile.c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (hFile == INVALID_HANDLE_VALUE)
+	{
+		return false;
+	}
+	char TimeMessage[MAX_PATH] = { 0 };
+	SYSTEMTIME st;
+	::GetLocalTime(&st);
+	char szTime[26] = { 0 };
+	sprintf_s(szTime, "%04d-%02d-%02d %02d:%02d:%02d %d ", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds);
+	sprintf_s(TimeMessage, "%s: %s\n", szTime, DataBuffer);
+	DWORD dwBytesToWrite = (DWORD)strlen(TimeMessage);
+	bErrorFlag = WriteFile(hFile, TimeMessage, dwBytesToWrite, NULL, &strOverlapped);
+	if (bErrorFlag == FALSE)
+	{
+		return false;
+	}
+	CloseHandle(hFile);
+	return true;
+}
+
 typedef struct _g_fork
 {
 	/* data */
@@ -144,6 +180,7 @@ extern "C" void mainCRTStartup(void* peb);
 //这个函数需要把vs的堆栈检测函数给关掉
 void sb_entry(void* peb) {
 	DWORD rc;
+	char buf[2048] = { 0 };
 #ifdef _M_IX86
 	// look at the explanation in fork.c for why we do these steps.
 	if (1) {
@@ -175,14 +212,18 @@ void sb_entry(void* peb) {
 		if (!__forked) {
 			stk = (char*)VirtualAlloc(NULL, mb + 65536, MEM_COMMIT, PAGE_READWRITE);
 			if (!stk) {
-				printf("virtual alloc in parent failed %d\n", GetLastError());
+				ZeroMemory(buf, 2048);
+				sprintf(buf, "virtual alloc in parent failed %d\n", GetLastError());
+				dbg_Log(buf);
 				return ;
 			}
 			end = stk + mb + 65536;
 			end -= sizeof(char*);
 
 			__fork_stack_begin = end;
-			printf("父进程 begin is 0x%08x\n", stk);
+			ZeroMemory(buf, 2048);
+			sprintf(buf, "父进程 begin is 0x%08x\n", stk);
+			dbg_Log(buf);
 			__asm {mov esp, end }; //把当前栈给替换掉=-=牛批
 
 			set_stackbase(end);
@@ -191,17 +232,21 @@ void sb_entry(void* peb) {
 		else { // child process
 			stk = (char*)__fork_stack_begin + sizeof(char*) - mb - 65536;
 
-			printf("子进程 begin is 0x%08x\n", stk);
+			//printf("子进程 begin is 0x%08x\n", stk);
 			end = (char*)VirtualAlloc(stk, mb + 65536, MEM_RESERVE, PAGE_READWRITE);
 			if (!end) {
 				rc = GetLastError();
-				printf("virtual alloc 1 in child failed %d\n", rc);
+				ZeroMemory(buf, 2048);
+				sprintf(buf, "virtual alloc1 in child failed %d\n", GetLastError());
+				dbg_Log(buf);
 				return ;
 			}
 			stk = (char*)VirtualAlloc(end, mb + 65536, MEM_COMMIT, PAGE_READWRITE);
 			if (!stk) {
 				rc = GetLastError();
-				printf("virtual alloc 2 in child failed %d\n", rc);
+				ZeroMemory(buf, 2048);
+				sprintf(buf, "virtual alloc2 in child failed %d\n", GetLastError());
+				dbg_Log(buf);
 				return;
 			}
 			end = stk + mb + 65536;

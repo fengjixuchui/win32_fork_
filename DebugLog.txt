@@ -1,0 +1,8 @@
+2019-05-21 17:52:57 655 : 父进程 begin is 0x00230000
+
+2019-05-21 17:52:57 670 : virtual alloc1 in child failed 487
+
+2019-05-21 17:54:31 605 : 父进程 begin is 0x01ce0000
+
+2019-05-21 17:54:31 613 : virtual alloc1 in child failed 487
+
