@@ -250,7 +250,7 @@ int fork(void) {
 		// -amol 2/2/97
 		GETEXCEPTIONREGIST() = (struct _EXCEPTION_REGISTRATION_RECORD*)_old_exr;
 #endif // _M_ALPHA
-		SetEvent(__hforkchild);
+		SetEvent(__hforkchild); //这里就是子进程初始化成功了,向父进程发送信息进行堆栈复制
 
 		//dprintf("Child ready to rumble\n");
 		if(WaitForSingleObject(__hforkparent,FORK_TIMEOUT) != WAIT_OBJECT_0)
@@ -405,7 +405,7 @@ int fork(void) {
 		SetEvent(h64Parent);
 		hArray[0] = h64Child;
 		hArray[1] = hProc;
-
+		//等待子进程响应
 		if (WaitForMultipleObjects(2,hArray,FALSE,FORK_TIMEOUT) != 
 				WAIT_OBJECT_0){
 

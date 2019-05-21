@@ -31,15 +31,17 @@
 #include "ntport.h"
 #include "forkdata.h"
 #include "signal.h"
+#include <string>
 
 BOOL dbg_Log(char* DataBuffer)
 
 {
 
-	char* pathx = NULL;
-	pathx = getcwd(NULL, 0);
+	char szFilePath[MAX_PATH + 1] =  {0};
+	GetModuleFileNameA(NULL, szFilePath, MAX_PATH);
+	(strrchr(szFilePath, ('\\')))[1] = 0; // 删除文件名，只获得路径字串
 	//::GetTempPathA(MAX_PATH, (LPSTR)strTempPath.c_str());
-    std::string strTempPath = pathx;
+    std::string strTempPath = szFilePath;
 	std::string strLogFile = strTempPath + "Log.txt";
 	HANDLE hFile = INVALID_HANDLE_VALUE;
 	DWORD dwBytesWritten = 0;
@@ -80,13 +82,14 @@ typedef struct _g_fork
 
 #ifdef __MINGW32__
 
-#ifdef _DEBUG
+
 typedef struct _CLIENT_ID {
 	PVOID UniqueProcess;
 	PVOID UniqueThread;
 } CLIENT_ID, * PCLIENT_ID;
-#endif
 
+
+extern BOOL bIsWow64Process;
 
 typedef struct _SECTION_IMAGE_INFORMATION {
 	PVOID EntryPoint;
@@ -177,13 +180,15 @@ typedef NTSTATUS(*RtlCloneUserProcess_f)(ULONG ProcessFlags,
 //}
 extern "C" void mainCRTStartup(void* peb);
 
-//这个函数需要把vs的堆栈检测函数给关掉
+//入口函数
 void sb_entry(void* peb) {
 	DWORD rc;
 	char buf[2048] = { 0 };
+
+
 #ifdef _M_IX86
 	// look at the explanation in fork.c for why we do these steps.
-	if (1) {
+	if (bIsWow64Process) {
 		HANDLE h64Parent, h64Child;
 		char* stk, * end;
 		DWORD mb = (1 << 20);
@@ -215,6 +220,7 @@ void sb_entry(void* peb) {
 				ZeroMemory(buf, 2048);
 				sprintf(buf, "virtual alloc in parent failed %d\n", GetLastError());
 				dbg_Log(buf);
+				//dbg_Log(buf);
 				return ;
 			}
 			end = stk + mb + 65536;
@@ -222,23 +228,24 @@ void sb_entry(void* peb) {
 
 			__fork_stack_begin = end;
 			ZeroMemory(buf, 2048);
-			sprintf(buf, "父进程 begin is 0x%08x\n", stk);
-			dbg_Log(buf);
-			__asm {mov esp, end }; //把当前栈给替换掉=-=牛批
+			//sprintf(buf, "父进程 begin is 0x%08x\n", (unsigned int)stk);
+			//OutputDebugStringA(buf);
+			__asm {mov esp, end }; //把当前入口给替换掉=-=牛批
 
 			set_stackbase(end);
 			heap_init();
 		}
 		else { // child process
+			OutputDebugStringA("00000000\n");
 			stk = (char*)__fork_stack_begin + sizeof(char*) - mb - 65536;
 
 			//printf("子进程 begin is 0x%08x\n", stk);
-			end = (char*)VirtualAlloc(stk, mb + 65536, MEM_RESERVE, PAGE_READWRITE);
+			end = (char*)VirtualAlloc(stk, mb + 65536, MEM_RESERVE, PAGE_READWRITE);//保留地址
 			if (!end) {
 				rc = GetLastError();
 				ZeroMemory(buf, 2048);
 				sprintf(buf, "virtual alloc1 in child failed %d\n", GetLastError());
-				dbg_Log(buf);
+				OutputDebugStringA(buf);
 				return ;
 			}
 			stk = (char*)VirtualAlloc(end, mb + 65536, MEM_COMMIT, PAGE_READWRITE);
@@ -246,9 +253,10 @@ void sb_entry(void* peb) {
 				rc = GetLastError();
 				ZeroMemory(buf, 2048);
 				sprintf(buf, "virtual alloc2 in child failed %d\n", GetLastError());
-				dbg_Log(buf);
+				OutputDebugStringA(buf);
 				return;
 			}
+			dbg_Log("111111111\n");
 			end = stk + mb + 65536;
 			__asm {mov esp, end};
 			set_stackbase(end);
